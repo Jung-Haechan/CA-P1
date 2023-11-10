@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "simcache.h": "c",
+        "configcache.h": "c"
+    }
+}

@@ -1,0 +1,1 @@
+cd "/Users/haechan/Downloads/Distribute/" && gcc SC_SIM.c simCache.c configCache.c utilities.c -o SC_SIM && "/Users/haechan/Downloads/Distribute/"SC_SIM
