@@ -111,6 +111,8 @@ typedef struct SC_SIM_Profiler_st
     //                                                              //
     //  You can add some members that will be used for              //
     //  comprehensive profiling                                     //
+    int readMissCounter;
+    int writeMissCounter;
     
     /*--------------------------------------------------------------*/
 
