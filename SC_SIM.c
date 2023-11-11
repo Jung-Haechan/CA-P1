@@ -15,7 +15,7 @@
 //  This section is for Step 2. You can edit this section       //
 //  as you want.                                                //
 //                                                              //
-#define CacheLevel (3)
+#define CacheLevel (1)
 /*--------------------------------------------------------------*/
 
 int main()
@@ -31,7 +31,7 @@ int main()
     //  This section is for Step 2. You can edit this section       //
     //  as you want.                                                //
     //                                                              //
-    SC_SIM_Cache CacheArr[CacheLevel] = { L1Cache , L2Cache, L3Cache };
+    SC_SIM_Cache CacheArr[CacheLevel] = { L1Cache };
     /*--------------------------------------------------------------*/
 
     // Access trace file Loading
