@@ -7,6 +7,7 @@
 #include <math.h>
 
 
+
 // some useful macros
 #define MAX(a,b) ((a)>(b)?(a):(b))
 #define MIN(a,b) ((a)<(b)?(a):(b))
@@ -17,6 +18,11 @@
 
 
 /*-------------- Write your own code below ---------------*/
+
+int binary_to_decimal(const char *binary);
+char* decimal_to_binary(int decimal, int binarySize);
+
+char* strsplit_with_index(const char *str, int start, int end);
 
 /*--------------------------------------------------------*/
 

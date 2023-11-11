@@ -17,7 +17,7 @@ void WriteToCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr, int memoryAc
 
 // Other calculation functions
 /* ------- Write your own code below  ------- */
-
+void AccessCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr, int memoryAccessCnt, char type);
 /* ------------------------------------------ */
 
 

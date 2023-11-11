@@ -1,5 +1,5 @@
 #include "configCache.h"
-
+#include <stdio.h>
 
 SC_SIM_Cache init_Cache(int cacheSize, int blockSize, SC_SIM_WritePolicy writePolicy, int associativity, SC_SIM_ReplacementPolicy replacementPolicy, int accessCycle)
 {
@@ -46,6 +46,8 @@ SC_SIM_Cache init_Cache(int cacheSize, int blockSize, SC_SIM_WritePolicy writePo
     //                                                              //
     //  The initialization of member that you added in SC_SIM_Cache //
     // will be done here.                                           //
+    cache.profiler.writeMissCounter = 0;
+    cache.profiler.readMissCounter = 0;
 
     /*--------------------------------------------------------------*/
 
@@ -73,6 +75,13 @@ int calc_TotalAccessCycle(SC_SIM_Cache* CacheArr, int CacheLevel)
     //  The code for calculating total access cycle should be       //
     //  written here.                                               //
 
+    for (int i = 0; i < CacheLevel; i++)
+    {
+        TotalAccessCycle += CacheArr[i].accessCycle * (CacheArr[i].profiler.readCounter + CacheArr[i].profiler.writeCounter);
+    }
+
+    int memAccessCounter = (CacheArr[CacheLevel - 1].profiler.readMissCounter + CacheArr[CacheLevel - 1].profiler.writeMissCounter);
+    TotalAccessCycle += SC_SIM_MEM_ACCESS_CYCLE * memAccessCounter;
     /*--------------------------------------------------------------*/
 
     return TotalAccessCycle;
@@ -80,11 +89,19 @@ int calc_TotalAccessCycle(SC_SIM_Cache* CacheArr, int CacheLevel)
 
 float calc_GlobalHitRatio(SC_SIM_Cache* CacheArr, int CacheLevel)
 {
+    float totalAccess = 0;
+    float totalHit = 0;
     /*--------------     Write your own code below    --------------*/
     //                                                              //
     //  The code for the calculation of global hit ratio should be  //
     //  written here.                                               //
 
-    return 0.0;
+    for (int i = 0; i < CacheLevel; i++)
+    {
+        totalAccess += (CacheArr[i].profiler.readCounter + CacheArr[i].profiler.writeCounter);
+        totalHit += (CacheArr[i].profiler.readHitCounter + CacheArr[i].profiler.writeHitCounter);
+    }
+
+    return totalHit / totalAccess;
     /*--------------------------------------------------------------*/
 }
