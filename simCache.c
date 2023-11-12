@@ -19,6 +19,9 @@ int SimulateCache(SC_SIM_Cache* CacheArr, int CacheLevel, FILE* fd)
         if (feof(fd))
             break;
 
+        // if (memoryAccessCnt == 10)
+        //     break;
+
         // Memeory Access
         switch (accessType)
         {
@@ -41,7 +44,21 @@ void ReadFromCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr, int memoryA
 {
     /* ------- Write your own code below  ------- */
 
-    AccessCache(CacheArr, CacheLevel, addr, memoryAccessCnt, 'r');
+    DataLocationInfo d;
+    d = FindCache(CacheArr, CacheLevel, addr);
+    if (d.CacheIndex == -1) {                           // 데이터가 메모리에만 있을 때
+        for (int i = 0; i < CacheLevel; i++) {
+            CacheArr[i].profiler.readCounter += 1;
+            CacheArr[i].profiler.accessCounter += 1;
+            MEM_ACCESS_COUNTER += 1;
+        }
+    } else {                                            // 데이터가 캐시에 있을 때
+        CacheArr[d.CacheIndex].profiler.readHitCounter += 1;
+        for (int i = 0; i < d.CacheIndex + 1; i++) {
+            CacheArr[i].profiler.readCounter += 1;
+            CacheArr[i].profiler.accessCounter += 1;
+        }
+    }
 
     /* ------------------------------------------ */
     return;
@@ -51,8 +68,29 @@ void ReadFromCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr, int memoryA
 void WriteToCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr, int memoryAccessCnt)
 {
     /* ------- Write your own code below  ------- */
+    DataLocationInfo d;
+    d = FindCache(CacheArr, CacheLevel, addr);
+    if (d.CacheIndex == -1) {                                   // 데이터가 메모리에만 있을 때
+        for (int i = 0; i < CacheLevel; i++) {
+            CacheArr[i].profiler.writeCounter += 1;
+            CacheArr[i].profiler.accessCounter += 1;
+            MEM_ACCESS_COUNTER += 1;
+        }
+    } else {                                                    // 데이터가 캐시에 있을 때
+        CacheArr[d.CacheIndex].profiler.writeHitCounter += 1;
+        for (int i = 0; i < d.CacheIndex + 1; i++) {
+            CacheArr[i].profiler.writeCounter += 1;
+            CacheArr[i].profiler.accessCounter += 1;
+        }
+    }
 
-    AccessCache(CacheArr, CacheLevel, addr, memoryAccessCnt, 'w');
+    // Write through
+    for (int i = 0; i < CacheLevel; i++) {
+        CacheArr[i].profiler.accessCounter += 1;
+    }
+    MEM_ACCESS_COUNTER += 1;
+
+    // AccessCache(CacheArr, CacheLevel, addr, memoryAccessCnt, 'w');
     
     /* ------------------------------------------ */
 
@@ -63,8 +101,10 @@ void WriteToCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr, int memoryAc
 
 /* ------- Write your own code below  ------- */
 
-void AccessCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr, int memoryAccessCnt, char type)
+DataLocationInfo FindCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr)
 {
+    DataLocationInfo d;
+    d.CacheIndex = -1;
     for (int i = 0; i < CacheLevel; i++) {
         char* binAddr = decimal_to_binary(addr, ADDR_SIZE);
         char* binBlockOffset = strsplit_with_index(binAddr, ADDR_SIZE - log2(CacheArr[i].blockSize) + 1, ADDR_SIZE);
@@ -76,45 +116,19 @@ void AccessCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr, int memoryAcc
         int decTag = binary_to_decimal(binTag);
 
         int is_exist = CacheArr[i].CacheLines[0][decIndex].tag == decTag && CacheArr[i].CacheLines[0][decIndex].valid == 1;
-
-
-        // 2단계
-        CacheArr[i].profiler.accessCounter += 1;
-
-        if (type == 'w') {
-            CacheArr[i].profiler.writeCounter += 1;
-            if (is_exist) {
-                CacheArr[i].profiler.writeHitCounter += 1;
-                break;
-            } else {
-                CacheArr[i].profiler.writeMissCounter += 1;
-                if (i == CacheLevel - 1) {
-                    MEM_ACCESS_COUNTER += 1;
-                }
-            }
-        } else {
-            CacheArr[i].profiler.readCounter += 1;
-            if (is_exist) {
-                CacheArr[i].profiler.readHitCounter += 1;
-                break;
-            } else {
-                CacheArr[i].profiler.readMissCounter += 1;
-                if (i == CacheLevel - 1) {
-                    MEM_ACCESS_COUNTER += 1;
-                }
-            }
-        }
+        
         CacheArr[i].CacheLines[0][decIndex].tag = decTag;
         CacheArr[i].CacheLines[0][decIndex].valid = 1;
-    }
-
-    if (type == 'w') {
-        for (int i = 0; i < CacheLevel; i++) {
-            CacheArr[i].profiler.accessCounter += 1;
+        
+        d.LineIndex = decIndex;
+        if (is_exist == 1) {
+            d.CacheIndex = i;
+            break;
         }
-        MEM_ACCESS_COUNTER += 1;
     }
-    // 2단계
+    return d;
+
+    // d: { CacheIndex, LineIndex }
 }
 
 /* ------------------------------------------ */

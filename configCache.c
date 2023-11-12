@@ -86,7 +86,7 @@ int calc_TotalAccessCycle(SC_SIM_Cache* CacheArr, int CacheLevel)
 
     TotalAccessCycle += SC_SIM_MEM_ACCESS_CYCLE * MEM_ACCESS_COUNTER;
     // 2단계
-    
+
     /*--------------------------------------------------------------*/
 
     return TotalAccessCycle;
@@ -101,10 +101,9 @@ float calc_GlobalHitRatio(SC_SIM_Cache* CacheArr, int CacheLevel)
     //  The code for the calculation of global hit ratio should be  //
     //  written here.                                               //
 
-    // 2단계
     totalAccess = (CacheArr[0].profiler.readCounter + CacheArr[0].profiler.writeCounter);
-    totalMiss = (CacheArr[CacheLevel - 1].profiler.readMissCounter + CacheArr[CacheLevel - 1].profiler.writeMissCounter);
-    // 2단계
+    totalMiss = (CacheArr[CacheLevel - 1].profiler.readCounter + CacheArr[CacheLevel - 1].profiler.writeCounter)
+        - (CacheArr[CacheLevel - 1].profiler.readHitCounter + CacheArr[CacheLevel - 1].profiler.writeHitCounter);
 
     return 1 - (totalMiss / totalAccess);
     /*--------------------------------------------------------------*/

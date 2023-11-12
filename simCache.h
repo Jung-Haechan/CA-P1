@@ -17,7 +17,13 @@ void WriteToCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr, int memoryAc
 
 // Other calculation functions
 /* ------- Write your own code below  ------- */
-void AccessCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr, int memoryAccessCnt, char type);
+
+typedef struct DataLocationInfo_st {
+    int CacheIndex;
+    int LineIndex;
+}DataLocationInfo;
+
+DataLocationInfo FindCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr);
 /* ------------------------------------------ */
 
 
