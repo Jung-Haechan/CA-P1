@@ -4,7 +4,6 @@
 #include "simCache.h"
 #include "utilities.h"
 
-
 int SimulateCache(SC_SIM_Cache* CacheArr, int CacheLevel, FILE* fd)
 {
     // Excution initialization
@@ -54,7 +53,6 @@ void WriteToCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr, int memoryAc
     /* ------- Write your own code below  ------- */
 
     AccessCache(CacheArr, CacheLevel, addr, memoryAccessCnt, 'w');
-    // printf("%s\n%s\n%s\n%s\n", binAddr, binBlockOffset, binIndex, binTag);
     
     /* ------------------------------------------ */
 
@@ -79,6 +77,10 @@ void AccessCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr, int memoryAcc
 
         int is_exist = CacheArr[i].CacheLines[0][decIndex].tag == decTag && CacheArr[i].CacheLines[0][decIndex].valid == 1;
 
+
+        // 2단계
+        CacheArr[i].profiler.accessCounter += 1;
+
         if (type == 'w') {
             CacheArr[i].profiler.writeCounter += 1;
             if (is_exist) {
@@ -86,6 +88,9 @@ void AccessCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr, int memoryAcc
                 break;
             } else {
                 CacheArr[i].profiler.writeMissCounter += 1;
+                if (i == CacheLevel - 1) {
+                    MEM_ACCESS_COUNTER += 1;
+                }
             }
         } else {
             CacheArr[i].profiler.readCounter += 1;
@@ -94,13 +99,22 @@ void AccessCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr, int memoryAcc
                 break;
             } else {
                 CacheArr[i].profiler.readMissCounter += 1;
+                if (i == CacheLevel - 1) {
+                    MEM_ACCESS_COUNTER += 1;
+                }
             }
         }
-
         CacheArr[i].CacheLines[0][decIndex].tag = decTag;
         CacheArr[i].CacheLines[0][decIndex].valid = 1;
     }
 
+    if (type == 'w') {
+        for (int i = 0; i < CacheLevel; i++) {
+            CacheArr[i].profiler.accessCounter += 1;
+        }
+        MEM_ACCESS_COUNTER += 1;
+    }
+    // 2단계
 }
 
 /* ------------------------------------------ */

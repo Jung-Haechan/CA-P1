@@ -113,7 +113,8 @@ typedef struct SC_SIM_Profiler_st
     //  comprehensive profiling                                     //
     int readMissCounter;
     int writeMissCounter;
-    
+
+    int accessCounter;
     /*--------------------------------------------------------------*/
 
 }SC_SIM_Profiler;
@@ -162,6 +163,8 @@ float calc_GlobalHitRatio(SC_SIM_Cache* CacheArr, int CacheLevel);
 //                                                              //
 //  You can add some profile functions for comprehensive        //
 //  profiling                                                   //
+
+int MEM_ACCESS_COUNTER;
 
 /*--------------------------------------------------------------*/
 

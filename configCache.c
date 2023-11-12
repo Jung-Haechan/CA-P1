@@ -1,6 +1,8 @@
 #include "configCache.h"
 #include <stdio.h>
 
+int MEM_ACCESS_COUNTER = 0;
+
 SC_SIM_Cache init_Cache(int cacheSize, int blockSize, SC_SIM_WritePolicy writePolicy, int associativity, SC_SIM_ReplacementPolicy replacementPolicy, int accessCycle)
 {
     // cache declaration
@@ -49,6 +51,7 @@ SC_SIM_Cache init_Cache(int cacheSize, int blockSize, SC_SIM_WritePolicy writePo
     cache.profiler.writeMissCounter = 0;
     cache.profiler.readMissCounter = 0;
 
+    cache.profiler.accessCounter = 0;
     /*--------------------------------------------------------------*/
 
 
@@ -75,13 +78,15 @@ int calc_TotalAccessCycle(SC_SIM_Cache* CacheArr, int CacheLevel)
     //  The code for calculating total access cycle should be       //
     //  written here.                                               //
 
+    // 2단계
     for (int i = 0; i < CacheLevel; i++)
     {
-        TotalAccessCycle += CacheArr[i].accessCycle * (CacheArr[i].profiler.readCounter + CacheArr[i].profiler.writeCounter);
+        TotalAccessCycle += CacheArr[i].accessCycle * CacheArr[i].profiler.accessCounter;
     }
 
-    int memAccessCounter = (CacheArr[CacheLevel - 1].profiler.readMissCounter + CacheArr[CacheLevel - 1].profiler.writeMissCounter);
-    TotalAccessCycle += SC_SIM_MEM_ACCESS_CYCLE * memAccessCounter;
+    TotalAccessCycle += SC_SIM_MEM_ACCESS_CYCLE * MEM_ACCESS_COUNTER;
+    // 2단계
+    
     /*--------------------------------------------------------------*/
 
     return TotalAccessCycle;
@@ -89,19 +94,18 @@ int calc_TotalAccessCycle(SC_SIM_Cache* CacheArr, int CacheLevel)
 
 float calc_GlobalHitRatio(SC_SIM_Cache* CacheArr, int CacheLevel)
 {
-    float totalAccess = 0;
-    float totalHit = 0;
+    float totalAccess;
+    float totalMiss;
     /*--------------     Write your own code below    --------------*/
     //                                                              //
     //  The code for the calculation of global hit ratio should be  //
     //  written here.                                               //
 
-    for (int i = 0; i < CacheLevel; i++)
-    {
-        totalAccess += (CacheArr[i].profiler.readCounter + CacheArr[i].profiler.writeCounter);
-        totalHit += (CacheArr[i].profiler.readHitCounter + CacheArr[i].profiler.writeHitCounter);
-    }
+    // 2단계
+    totalAccess = (CacheArr[0].profiler.readCounter + CacheArr[0].profiler.writeCounter);
+    totalMiss = (CacheArr[CacheLevel - 1].profiler.readMissCounter + CacheArr[CacheLevel - 1].profiler.writeMissCounter);
+    // 2단계
 
-    return totalHit / totalAccess;
+    return 1 - (totalMiss / totalAccess);
     /*--------------------------------------------------------------*/
 }
