@@ -33,7 +33,7 @@ typedef struct IndexTag_st {
 
 IndexTag IndexTagFromDecAddr(SC_SIM_Cache Cache, int decAddr);
 int DecAddrFromIndexTag(SC_SIM_Cache Cache, int index, int tag);
-void OverrideOnCache(SC_SIM_Cache* CacheArr, int CacheLevel, int CacheIndex, int LineIndex, int tag);
+void VictimCache(SC_SIM_Cache* CacheArr, int CacheLevel, int CacheIndex, int LineIndex, int tag);
 
 /* ------------------------------------------ */
 
