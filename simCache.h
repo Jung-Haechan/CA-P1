@@ -21,9 +21,20 @@ void WriteToCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr, int memoryAc
 typedef struct DataLocationInfo_st {
     int CacheIndex;
     int LineIndex;
+    int OriginTag;
 }DataLocationInfo;
 
 DataLocationInfo FindCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr);
+
+typedef struct IndexTag_st {
+    int index;
+    int tag;
+}IndexTag;
+
+IndexTag IndexTagFromDecAddr(SC_SIM_Cache Cache, int decAddr);
+int DecAddrFromIndexTag(SC_SIM_Cache Cache, int index, int tag);
+void OverrideOnCache(SC_SIM_Cache* CacheArr, int CacheLevel, int CacheIndex, int LineIndex, int tag);
+
 /* ------------------------------------------ */
 
 
