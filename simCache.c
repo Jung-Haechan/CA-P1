@@ -324,7 +324,7 @@ int DecAddrFromIndexTag(SC_SIM_Cache Cache, int index, int tag) {
     return binary_to_decimal(binOriginAddr);
 }
 
-
+// Set Index를 찾는 함수
 int GetSetIndex(SC_SIM_Cache Cache, int LineIndex, int Tag)
 {
     int SetIndex = -1;
@@ -338,6 +338,8 @@ int GetSetIndex(SC_SIM_Cache Cache, int LineIndex, int Tag)
     return SetIndex;
 }
 
+
+// 최신순으로 Set 정렬
 void RealignSetRU(SC_SIM_Cache Cache, int LineIndex, int SetIndex)
 {
     SC_SIM_CacheLine tempCacheLine = Cache.CacheLines[SetIndex][LineIndex];
