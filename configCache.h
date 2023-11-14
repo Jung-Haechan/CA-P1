@@ -44,9 +44,9 @@ typedef enum SC_SIM_WritePolicy_en
 //  as you want.                                                //
 //                                                              //
 // cache write policy
-#define SC_SIM_L1_WRITE_POLICY (SC_SIM_WRITE_THROUGH)
-#define SC_SIM_L2_WRITE_POLICY (SC_SIM_WRITE_THROUGH)
-#define SC_SIM_L3_WRITE_POLICY (SC_SIM_WRITE_THROUGH)
+#define SC_SIM_L1_WRITE_POLICY (SC_SIM_WRITE_BACK)
+#define SC_SIM_L2_WRITE_POLICY (SC_SIM_WRITE_BACK)
+#define SC_SIM_L3_WRITE_POLICY (SC_SIM_WRITE_BACK)
 /*--------------------------------------------------------------*/
 
 /*-------------- you can edit the section below  ---------------*/
@@ -55,7 +55,7 @@ typedef enum SC_SIM_WritePolicy_en
 //  as you want.                                                //
 //                                                              //
 // cache associativity
-#define SC_SIM_L1_ASSOCIATIVITY (1)     // [ ways ]
+#define SC_SIM_L1_ASSOCIATIVITY (4)     // [ ways ]
 #define SC_SIM_L2_ASSOCIATIVITY (1)     // [ ways ]
 #define SC_SIM_L3_ASSOCIATIVITY (1)     // [ ways ]
 
@@ -67,10 +67,12 @@ typedef enum SC_SIM_ReplacementPolicy_en
     SC_SIM_RANDOM,
     SC_SIM_NONE
 }SC_SIM_ReplacementPolicy;
-#define SC_SIM_L1_REPLACEMENT_POLICY (SC_SIM_NONE)
-#define SC_SIM_L2_REPLACEMENT_POLICY (SC_SIM_NONE)
-#define SC_SIM_L3_REPLACEMENT_POLICY (SC_SIM_NONE)
+#define SC_SIM_L1_REPLACEMENT_POLICY (SC_SIM_LRU)
+#define SC_SIM_L2_REPLACEMENT_POLICY (SC_SIM_LRU)
+#define SC_SIM_L3_REPLACEMENT_POLICY (SC_SIM_LRU)
 /*--------------------------------------------------------------*/
+
+#define LOGGING (0)
 
 
 /*-------- Structure definitions --------*/

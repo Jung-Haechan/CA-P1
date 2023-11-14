@@ -6,8 +6,12 @@
 #include "utilities.h"
 #include <time.h>
 
+
 int SimulateCache(SC_SIM_Cache* CacheArr, int CacheLevel, FILE* fd)
 {
+    FILE *fd_for_log;
+    fd_for_log =fopen("log.txt", "w");
+
     // Excution initialization
     int memoryAccessCnt = 0;
 
@@ -21,40 +25,45 @@ int SimulateCache(SC_SIM_Cache* CacheArr, int CacheLevel, FILE* fd)
         if (feof(fd))
             break;
 
-        // if (memoryAccessCnt == 100)
-        //     break;
+        if (LOGGING) {
+            if (memoryAccessCnt == 5000)
+                break;
+        }
 
         // Memeory Access
         switch (accessType)
         {
             case 'L':
-                ReadFromCache(CacheArr, CacheLevel, addr, memoryAccessCnt);
+                ReadFromCache(CacheArr, CacheLevel, addr, memoryAccessCnt, fd_for_log);
                 break;
             case 'S':
-                WriteToCache(CacheArr, CacheLevel, addr, memoryAccessCnt);
+                WriteToCache(CacheArr, CacheLevel, addr, memoryAccessCnt, fd_for_log);
                 break;
             default :
                 printf("Error: Invalid Access Type\n");
                 break;
         }
+        if (LOGGING) fprintf(fd_for_log, "-----------------------------------------\n");
     }
+    fclose(fd_for_log);
     return memoryAccessCnt;
 }
 
 
-void ReadFromCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr, int memoryAccessCnt)
+void ReadFromCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr, int memoryAccessCnt, FILE *fd_for_log)
 {
     /* ------- Write your own code below  ------- */
 
     // 캐시 존재 여부 출력 함수, 만약 cache hit 시 해당 cache level과 line index return
+    if (LOGGING) fprintf(fd_for_log, "READ - address: %d\n", addr);
     DataLocationInfo d;
-    d = FindCache(CacheArr, CacheLevel, addr);
-    // printf("read\n");
+    d = FindCache(CacheArr, CacheLevel, addr, fd_for_log);
     // 캐시에 존재하면 해당 캐시레벨까지만 액세스, 존재하지 않으면 최종 캐시레벨까지 액세스
     int last_cache_lv = d.CacheIndex == -1 ? CacheLevel-1 : d.CacheIndex;
 
     // 캐시가 존재하지 않을 때 메모리 접근 + 1
     if (d.CacheIndex == -1) {
+        if (LOGGING) fprintf(fd_for_log, "LOAD FROM MEMORY!\n");
         MEM_ACCESS_COUNTER += 1;
     }
     // 하위 캐시부터 순차적으로 override
@@ -68,7 +77,7 @@ void ReadFromCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr, int memoryA
             // 캐시 스케일에 따라 index, tag 변환
             IndexTag indexTag = IndexTagFromDecAddr(CacheArr[i], addr);
             // 캐시에 존재하지 않는 경우 override
-            VictimCache(CacheArr, CacheLevel, i, indexTag.index, indexTag.tag);
+            VictimCache(CacheArr, CacheLevel, i, indexTag.index, indexTag.tag, fd_for_log);
         }
     }
 
@@ -78,18 +87,19 @@ void ReadFromCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr, int memoryA
 }
 
 
-void WriteToCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr, int memoryAccessCnt)
+void WriteToCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr, int memoryAccessCnt, FILE *fd_for_log)
 {
     /* ------- Write your own code below  ------- */
+    if (LOGGING) fprintf(fd_for_log, "WRITE - address: %d\n", addr);
     DataLocationInfo d;    
-    d = FindCache(CacheArr, CacheLevel, addr);
-    // printf("write\n");
+    d = FindCache(CacheArr, CacheLevel, addr, fd_for_log);
 
     // 캐시에 존재하면 해당 캐시레벨까지만 액세스, 존재하지 않으면 최종 캐시레벨까지 액세스
     int last_cache_lv = d.CacheIndex == -1 ? CacheLevel-1 : d.CacheIndex;
 
     // 캐시가 존재하지 않을 때 메모리 접근 + 1
     if (d.CacheIndex == -1) {
+        if (LOGGING) fprintf(fd_for_log, "LOAD FROM MEMORY!\n");
         MEM_ACCESS_COUNTER += 1;        
     }
     // 하위 캐시부터 순차적으로 override
@@ -98,7 +108,7 @@ void WriteToCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr, int memoryAc
         IndexTag indexTag = IndexTagFromDecAddr(CacheArr[i], addr);
         // 캐시에 존재하지 않는 경우 victim 후 override
         if (i != d.CacheIndex) {
-            VictimCache(CacheArr, CacheLevel, i, indexTag.index, indexTag.tag);
+            VictimCache(CacheArr, CacheLevel, i, indexTag.index, indexTag.tag, fd_for_log);
         } else {
             // 데이터 보유 캐시에 들어왔을 때는 hit + 1
             CacheArr[i].profiler.writeHitCounter += 1;
@@ -113,12 +123,14 @@ void WriteToCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr, int memoryAc
                 CacheArr[i].profiler.accessCounter += 1;
             }
             MEM_ACCESS_COUNTER += 1;
+            if (LOGGING) fprintf(fd_for_log, "WRITE ON MEMORY!");
             break;
         }
         case 1: {   // WRITE BACK
             // 최상위 캐시에 데이터 작성 후 dirty bit 1로 수정 
             IndexTag L1IndexTag = IndexTagFromDecAddr(CacheArr[0], addr);
             CacheArr[0].CacheLines[0][L1IndexTag.index].dirty = 1;
+            if (LOGGING) fprintf(fd_for_log, "WRITE DATA ON CACHE[%d][%d] --- TAG: %d\n", 0, L1IndexTag.index, L1IndexTag.tag);
             break;
         }
     }
@@ -135,12 +147,11 @@ void WriteToCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr, int memoryAc
 /* ------- Write your own code below  ------- */
 
 // 캐시 존재 여부 출력 함수, 만약 존재 시 존재하는 최상위 cache level과 line index return
-DataLocationInfo FindCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr)
+DataLocationInfo FindCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr, FILE* fd_for_log)
 {
     DataLocationInfo d;
     d.CacheIndex = -1;
     d.LineIndex = -1;
-    // printf("----------------------------\n");
     for (int i = 0; i < CacheLevel; i++) {
         IndexTag decIndexTag = IndexTagFromDecAddr(CacheArr[i], addr);
         int decIndex = decIndexTag.index;
@@ -152,12 +163,28 @@ DataLocationInfo FindCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr)
         int is_exist = setIndex != -1;
         
         if (is_exist) {
+            if (LOGGING) fprintf(fd_for_log, "ACCESS CACHE[%d] --- HIT! --- INDEX: %d, TAG:%d, SET: %d\n", i, decIndex, decTag, setIndex);
+
             d.CacheIndex = i;
             d.LineIndex = decIndex;
             switch (CacheArr[i].replacementPolicy) {
                 case 0: {
                     //  LRU일 때는 캐시에 저장될 때와 hit이 발생했을 때 모두 최신순으로 정렬
+                    if (LOGGING) {
+                        fprintf(fd_for_log, "---<ORIGIN TAGS>: |");
+                        for (int j = 0; j < CacheArr[i].associativity; j++) {
+                            fprintf(fd_for_log, "%d|", CacheArr[i].CacheLines[j][decIndex].tag);
+                        }
+                        fprintf(fd_for_log, "\n");
+                    }
                     RealignSetRU(CacheArr[i], decIndex, setIndex);
+                    if (LOGGING) {
+                        fprintf(fd_for_log, "---<NEW    TAGS>: |");
+                        for (int j = 0; j < CacheArr[i].associativity; j++) {
+                            fprintf(fd_for_log, "%d|", CacheArr[i].CacheLines[j][decIndex].tag);
+                        }
+                        fprintf(fd_for_log, "\n");
+                    }
                     break;
                 }
                 case 1: {
@@ -172,6 +199,7 @@ DataLocationInfo FindCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr)
 
             break;
         }
+        if (LOGGING) fprintf(fd_for_log, "ACCESS CACHE[%d] --- MISS! --- INDEX: %d, TAG:%d\n", i, decIndex, decTag);
     }
     return d;
 
@@ -179,7 +207,7 @@ DataLocationInfo FindCache(SC_SIM_Cache* CacheArr, int CacheLevel, int addr)
 }
 
 // victim cache 함수, 기존에 캐시에 차지하던 데이터를 날리고 방금 사용한 데이터를 override함.
-void VictimCache(SC_SIM_Cache* CacheArr, int CacheLevel, int CacheIndex, int LineIndex, int Tag)
+void VictimCache(SC_SIM_Cache* CacheArr, int CacheLevel, int CacheIndex, int LineIndex, int Tag, FILE* fd_for_log)
 {
     CacheArr[CacheIndex].profiler.accessCounter += 1;
     int SetIndex = 0;
@@ -194,7 +222,6 @@ void VictimCache(SC_SIM_Cache* CacheArr, int CacheLevel, int CacheIndex, int Lin
             break;
         }
         case 2: {
-            srand(time(NULL));
             SetIndex = rand() % CacheArr[CacheIndex].associativity;
             break;
         }
@@ -203,7 +230,15 @@ void VictimCache(SC_SIM_Cache* CacheArr, int CacheLevel, int CacheIndex, int Lin
         }
     }
 
-    CacheArr[CacheIndex].CacheLines[SetIndex][LineIndex].dirty = 0;
+    if (LOGGING) {
+        fprintf(fd_for_log, "REPLACE CACHE[%d][%d]\n", CacheIndex, LineIndex);
+        fprintf(fd_for_log, "---<ORIGIN TAGS>: |");
+        for (int i = 0; i < CacheArr[CacheIndex].associativity; i++) {
+            fprintf(fd_for_log, "%d|", CacheArr[CacheIndex].CacheLines[i][LineIndex].tag);
+        }
+        fprintf(fd_for_log, "\n");
+    }
+
     if (CacheArr[0].writePolicy == 1) {         // WRITE BACK
         if (CacheArr[CacheIndex].CacheLines[SetIndex][LineIndex].dirty == 1) {
             int originAddr = DecAddrFromIndexTag(CacheArr[CacheIndex], LineIndex, Tag);
@@ -213,13 +248,17 @@ void VictimCache(SC_SIM_Cache* CacheArr, int CacheLevel, int CacheIndex, int Lin
                 CacheArr[CacheIndex + 1].profiler.accessCounter += 1;
                 IndexTag IndexTagOfParent = IndexTagFromDecAddr(CacheArr[CacheIndex + 1], originAddr);
                 CacheArr[CacheIndex + 1].CacheLines[ParentSetIndex][IndexTagOfParent.index].dirty = 1;
+                if (LOGGING)fprintf(fd_for_log, "---WRITE DATA ON CACHE[%d][%d] --- TAG: %d\n", CacheIndex+1, IndexTagOfParent.index, CacheArr[CacheIndex + 1].CacheLines[ParentSetIndex][IndexTagOfParent.index].tag);
             } else { // L3인 경우
                 // 메모리에 데이터 수정
                 MEM_ACCESS_COUNTER += 1;
+                if (LOGGING)fprintf(fd_for_log, "WRITE ON MEMORY!");
             }
         }
     }
+
     //  victim cache
+    CacheArr[CacheIndex].CacheLines[SetIndex][LineIndex].dirty = 0;
     CacheArr[CacheIndex].CacheLines[SetIndex][LineIndex].tag = Tag;
     CacheArr[CacheIndex].CacheLines[SetIndex][LineIndex].valid = 1;
     switch (CacheArr[CacheIndex].replacementPolicy) {
@@ -237,6 +276,13 @@ void VictimCache(SC_SIM_Cache* CacheArr, int CacheLevel, int CacheIndex, int Lin
             //  RANDOM, NONE일 때는 정렬 필요 없음
             break;
         }
+    }
+    if (LOGGING) {
+        fprintf(fd_for_log, "---<NEW    TAGS>: ");
+        for (int i = 0; i < CacheArr[CacheIndex].associativity; i++) {
+            fprintf(fd_for_log, "|%d", CacheArr[CacheIndex].CacheLines[i][LineIndex].tag);
+        }
+        fprintf(fd_for_log, "|\n");
     }
 }
 
